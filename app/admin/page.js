@@ -126,7 +126,7 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('overview')}
                 className={`px-6 py-4 text-sm font-medium ${
                   activeTab === 'overview'
-                    ? 'border-b-2 border-indigo-500 text-indigo-600'
+                    ? 'border-b-2 border-accent-500text-primary-800'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -136,7 +136,7 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('users')}
                 className={`px-6 py-4 text-sm font-medium ${
                   activeTab === 'users'
-                    ? 'border-b-2 border-indigo-500 text-indigo-600'
+                    ? 'border-b-2 border-accent-500text-primary-800'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -146,7 +146,7 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('departments')}
                 className={`px-6 py-4 text-sm font-medium ${
                   activeTab === 'departments'
-                    ? 'border-b-2 border-indigo-500 text-indigo-600'
+                    ? 'border-b-2 border-accent-500text-primary-800'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -156,7 +156,7 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('categories')}
                 className={`px-6 py-4 text-sm font-medium ${
                   activeTab === 'categories'
-                    ? 'border-b-2 border-indigo-500 text-indigo-600'
+                    ? 'border-b-2 border-accent-500text-primary-800'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -166,7 +166,7 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab('assets')}
                 className={`px-6 py-4 text-sm font-medium ${
                   activeTab === 'assets'
-                    ? 'border-b-2 border-indigo-500 text-indigo-600'
+                    ? 'border-b-2 border-accent-500text-primary-800'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >

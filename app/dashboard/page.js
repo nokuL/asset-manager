@@ -191,7 +191,7 @@ export default function UserDashboard() {
           <h2 className="text-xl font-semibold">My Assets</h2>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            className="px-4 py-2 bg-primary-800 text-white rounded-lg hover:bg-primary-900"
           >
             {showForm ? 'Cancel' : 'Create New Asset'}
           </button>
@@ -223,7 +223,7 @@ export default function UserDashboard() {
                   required
                   value={formData.asset_name}
                   onChange={(e) => setFormData({ ...formData, asset_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
                   placeholder="e.g., Dell Laptop XPS 15"
                 />
               </div>
@@ -236,7 +236,7 @@ export default function UserDashboard() {
                   required
                   value={formData.category_id}
                   onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
                 >
                   <option value="">Select a category</option>
                   {categories.map((cat) => (
@@ -255,7 +255,7 @@ export default function UserDashboard() {
                   required
                   value={formData.department_id}
                   onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
                 >
                   <option value="">Select a department</option>
                   {departments.map((dept) => (
@@ -275,7 +275,7 @@ export default function UserDashboard() {
                   required
                   value={formData.date_purchased}
                   onChange={(e) => setFormData({ ...formData, date_purchased: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
                 />
               </div>
 
@@ -289,14 +289,14 @@ export default function UserDashboard() {
                   required
                   value={formData.cost}
                   onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
                   placeholder="0.00"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                className="w-full px-4 py-2 bg-primary-800 text-white rounded-lg hover:bg-primary-900"
               >
                 Create Asset
               </button>

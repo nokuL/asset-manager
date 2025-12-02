@@ -95,7 +95,7 @@ export default function DepartmentsTab({ onUpdate }) {
         <h2 className="text-xl font-semibold">Manage Departments</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          className="px-4 py-2 bg-primary-800 text-white rounded-lg hover:bg-primary-900"
         >
           {showForm ? 'Cancel' : 'Create New Department'}
         </button>
@@ -126,7 +126,7 @@ export default function DepartmentsTab({ onUpdate }) {
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
                 placeholder="e.g., IT, Finance, HR"
               />
             </div>
@@ -138,7 +138,7 @@ export default function DepartmentsTab({ onUpdate }) {
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
                 rows="3"
                 placeholder="Optional description"
               />
@@ -146,7 +146,7 @@ export default function DepartmentsTab({ onUpdate }) {
 
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              className="w-full px-4 py-2 bg-primary-800 text-white rounded-lg hover:bg-primary-900"
             >
               Create Department
             </button>

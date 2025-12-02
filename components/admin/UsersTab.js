@@ -77,7 +77,7 @@ export default function UsersTab({ onUpdate }) {
         <h2 className="text-xl font-semibold">Manage Users</h2>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+          className="px-4 py-2 bg-primary-800 text-white rounded-lg hover:bg-primary-900"
         >
           {showForm ? 'Cancel' : 'Create New User'}
         </button>
@@ -108,7 +108,7 @@ export default function UsersTab({ onUpdate }) {
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
               />
             </div>
 
@@ -122,7 +122,7 @@ export default function UsersTab({ onUpdate }) {
                 minLength={6}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
               />
             </div>
 
@@ -134,7 +134,7 @@ export default function UsersTab({ onUpdate }) {
                 type="text"
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
               />
             </div>
 
@@ -145,7 +145,7 @@ export default function UsersTab({ onUpdate }) {
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
               >
                 <option value="user">User</option>
                 <option value="admin">Admin</option>
@@ -154,7 +154,7 @@ export default function UsersTab({ onUpdate }) {
 
             <button
               type="submit"
-              className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+              className="w-full px-4 py-2 bg-primary-800 text-white rounded-lg hover:bg-primary-900"
             >
               Create User
             </button>
