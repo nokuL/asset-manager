@@ -27,7 +27,6 @@ export default function AssetsTab({ onUpdate }) {
         return
       }
 
-      // Load related data separately
       const assetsWithDetails = await Promise.all(
         (data || []).map(async (asset) => {
           const [category, department, creator] = await Promise.all([

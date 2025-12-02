@@ -41,7 +41,6 @@ export default function UsersTab({ onUpdate }) {
     setSuccess('')
 
     try {
-      // Create user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
