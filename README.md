@@ -1,36 +1,127 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+#  Asset Manager
 
-## Getting Started
+A comprehensive web-based Asset Management System built with Next.js, PostgreSQL (Supabase), and deployed on Vercel with CI/CD integration.
 
-First, run the development server:
+## Live Demo
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**Live Application:** [https://asset-manager-one.vercel.app](https://asset-manager-one.vercel.app)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+##  Test Credentials
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### Admin Account
+- **Email:** admin@assetmanager.com
+- **Password:** admin@123
+- **Access:** Full system administration capabilities
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### User Account
+- **Email:** lunganokuthaba@gmail.com
+- **Password:** noku@123
+- **Access:** Personal asset management
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+## Core Features
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Authentication & Authorization
+- ✅ **Role-Based Access Control** - Separate Admin and User roles
+- ✅ **Secure Login/Signup** - Powered by Supabase Auth
+- ✅ **Protected Routes** - Automatic redirection based on user role
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Admin Dashboard
+- ✅ **User Management** - Create and manage system users
+- ✅ **Department Management** - Create and manage departments
+- ✅ **Category Management** - Create and manage asset categories
+- ✅ **Asset Oversight** - View and delete all assets across the organization
+- ✅ **Analytics Dashboard** - Comprehensive insights with 4 different chart types:
+  - Pie Chart: Assets by Category
+  - Bar Chart: Assets by Department
+  - Bar Chart: Asset Value by Department
+  - Line Chart: Asset Creation Trend (6 months)
+- ✅ **Total Asset Value Tracking**
 
-## Deploy on Vercel
+### User Dashboard
+- ✅ **Personal Asset Management** - Create and manage own assets
+- ✅ **Asset Creation** - Add new assets with complete details
+- ✅ **Personal View** - View only self-created assets
+- ✅ **Asset Statistics** - Personal asset count and metrics
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Asset Management
+- ✅ **Complete Asset Information**
+  - Asset Name
+  - Unique Asset ID (Format: AST-2025-XXX)
+  - Category
+  - Department
+  - Cost
+  - Date Purchased
+  - Asset Image Upload
+  - Current Status
+  - Current Location
+- ✅ **Asset Images** - Upload and display asset images with placeholders
+- ✅ **Asset Status Tracking** - Available, In Use, Under Maintenance, Retired
+- ✅ **Location Tracking** - Track asset physical location
+- ✅ **Detailed Asset View** - Modal with complete asset information
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Asset Tracking System
+- ✅ **Movement History** - Complete audit trail of all changes
+- ✅ **Status Change Tracking** - Automatic logging of status updates
+- ✅ **Location Change Tracking** - Record location movements
+- ✅ **User Attribution** - Track who made each change
+- ✅ **Timestamped Records** - Precise datetime for each event
+- ✅ **Notes Support** - Add context to tracking updates
+- ✅ **Asset ID Search** - Quick lookup by Asset ID with full history modal
+
+### Data Management
+- ✅ **Search Functionality** - Search assets by name
+- ✅ **Pagination** - 5 items per page for better performance
+- ✅ **Referential Integrity** - Cannot delete departments/categories with assigned assets
+- ✅ **Data Validation** - Form validation and error handling
+
+### User Experience
+- ✅ **Modern UI Design** - Navy blue and deep orange theme
+- ✅ **Responsive Layout** - Works on desktop, tablet, and mobile
+- ✅ **Professional Navigation Bar** - Clean, intuitive navigation
+- ✅ **Interactive Modals** - Detailed views for assets
+- ✅ **Visual Status Badges** - Color-coded status indicators
+- ✅ **Loading States** - Smooth user experience with loading indicators
+- ✅ **Error Handling** - Clear error messages and feedback
+- ✅ **Success Messages** - Confirmation for successful actions
+- ✅ **Custom 404 Page** - Professional error page
+
+---
+
+## Technology Stack
+
+### Frontend
+- **Next.js 16** - React framework with App Router
+- **React 19** - UI library
+- **Tailwind CSS** - Utility-first CSS framework
+- **Recharts** - Chart library for analytics
+
+### Backend & Database
+- **Supabase** - Backend-as-a-Service
+  - PostgreSQL database
+  - Authentication
+  - Storage (for images)
+  - Row Level Security (RLS)
+- **Supabase Storage** - Asset image storage
+
+### Deployment & CI/CD
+- **Vercel** - Hosting platform
+- **GitHub** - Version control
+- **Automatic Deployment** - Push to main branch triggers redeployment
+
+---
+
+##  Installation & Setup
+
+### Prerequisites
+- Node.js 18+ installed
+- npm or yarn package manager
+- Supabase account
+- Vercel account (for deployment)
+.
+ 
+
+
+
+
+
