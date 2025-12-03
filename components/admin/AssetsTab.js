@@ -10,17 +10,35 @@ export default function AssetsTab({ onUpdate }) {
   const [success, setSuccess] = useState('')
   const [selectedAsset, setSelectedAsset] = useState(null)
   const [showModal, setShowModal] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     loadAssets()
   }, [])
-  const loadAssets = async () => {
+
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadAssets(searchTerm)
+    }, 500)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
+  const loadAssets = async (search = '') => {
     setLoading(true)
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('assets')
         .select('*')
         .order('created_at', { ascending: false })
+
+      // Add search filter if search term exists
+      if (search) {
+        query = query.ilike('asset_name', `%${search}%`)
+      }
+
+      const { data, error } = await query
 
       if (error) {
         console.error('Error loading assets:', error)
@@ -68,19 +86,54 @@ export default function AssetsTab({ onUpdate }) {
       setError(error.message)
     } else {
       setSuccess('Asset deleted successfully!')
-      loadAssets()
+      loadAssets(searchTerm)
       onUpdate()
     }
   }
 
-  if (loading) {
+  if (loading && assets.length === 0) {
     return <div className="text-center py-8">Loading assets...</div>
   }
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">All Assets</h2>
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+          <h2 className="text-xl font-semibold">All Assets</h2>
+          
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-96">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search assets by name ..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 text-sm"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* Search results count */}
+        {searchTerm && (
+          <p className="text-sm text-gray-600">
+            Found {assets.length} asset{assets.length !== 1 ? 's' : ''}
+          </p>
+        )}
       </div>
 
       {error && (
@@ -135,24 +188,25 @@ export default function AssetsTab({ onUpdate }) {
                   setShowModal(true)
                 }}
                 className="hover:bg-gray-50 cursor-pointer transition-colors"
-              >                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              >
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {asset.asset_name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-  {asset.image_url ? (
-    <img 
-      src={asset.image_url} 
-      alt={asset.asset_name}
-      className="w-16 h-16 object-contain bg-gray-50 rounded-lg p-1"
-    />
-  ) : (
-    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    </div>
-  )}
-</td>
+                  {asset.image_url ? (
+                    <img 
+                      src={asset.image_url} 
+                      alt={asset.asset_name}
+                      className="w-16 h-16 object-contain bg-gray-50 rounded-lg p-1"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                  )}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {asset.category?.name || '-'}
                 </td>
@@ -171,7 +225,7 @@ export default function AssetsTab({ onUpdate }) {
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <button
                     onClick={(e) => {
-                      e.stopPropagation() // Prevent row click
+                      e.stopPropagation()
                       handleDelete(asset.id)
                     }}
                     className="text-red-600 hover:text-red-800 font-medium"
@@ -187,14 +241,26 @@ export default function AssetsTab({ onUpdate }) {
 
       {assets.length === 0 && (
         <div className="text-center py-8 text-gray-500">
-          No assets found yet.
+          {searchTerm ? (
+            <>
+              No assets found matching "{searchTerm}".
+              <button
+                onClick={() => setSearchTerm('')}
+                className="block mx-auto mt-2 text-accent-600 hover:text-accent-700 font-medium"
+              >
+                Clear search
+              </button>
+            </>
+          ) : (
+            'No assets found yet.'
+          )}
         </div>
       )}
+
       {/* Asset Detail Modal */}
       {showModal && selectedAsset && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            {/* Modal Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
               <h3 className="text-xl font-bold text-gray-900">Asset Details</h3>
               <button
@@ -205,61 +271,43 @@ export default function AssetsTab({ onUpdate }) {
               </button>
             </div>
 
-            {/* Modal Body */}
             <div className="p-6">
-              {/* Asset Image */}
-              {selectedAsset.image_url && (
-                <div className="mb-6 bg-gray-50 rounded-lg p-4">
+              <div className="mb-6 bg-gray-50 rounded-lg p-4">
+                {selectedAsset.image_url ? (
                   <img
                     src={selectedAsset.image_url}
                     alt={selectedAsset.asset_name}
                     className="w-full h-auto max-h-96 object-contain rounded-lg"
                   />
-                </div>
-              )}
+                ) : (
+                  <div className="w-full h-64 bg-gray-100 rounded-lg flex flex-col items-center justify-center">
+                    <svg className="w-24 h-24 text-gray-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p className="text-gray-400 text-sm">No image available</p>
+                  </div>
+                )}
+              </div>
 
-              {/* Asset Information */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Asset Name
-                  </label>
-                  <p className="text-lg font-semibold text-gray-900">
-                    {selectedAsset.asset_name}
-                  </p>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Asset Name</label>
+                  <p className="text-lg font-semibold text-gray-900">{selectedAsset.asset_name}</p>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Category
-                  </label>
-                  <p className="text-lg text-gray-900">
-                    {selectedAsset.category?.name || '-'}
-                  </p>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Category</label>
+                  <p className="text-lg text-gray-900">{selectedAsset.category?.name || '-'}</p>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Department
-                  </label>
-                  <p className="text-lg text-gray-900">
-                    {selectedAsset.department?.name || '-'}
-                  </p>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Department</label>
+                  <p className="text-lg text-gray-900">{selectedAsset.department?.name || '-'}</p>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Cost
-                  </label>
-                  <p className="text-lg font-semibold text-accent-500">
-                    ${parseFloat(selectedAsset.cost).toFixed(2)}
-                  </p>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Cost</label>
+                  <p className="text-lg font-semibold text-accent-500">${parseFloat(selectedAsset.cost).toFixed(2)}</p>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Date Purchased
-                  </label>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Date Purchased</label>
                   <p className="text-lg text-gray-900">
                     {new Date(selectedAsset.date_purchased).toLocaleDateString('en-US', {
                       year: 'numeric',
@@ -268,20 +316,12 @@ export default function AssetsTab({ onUpdate }) {
                     })}
                   </p>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Created By
-                  </label>
-                  <p className="text-lg text-gray-900">
-                    {selectedAsset.creator?.email || '-'}
-                  </p>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Created By</label>
+                  <p className="text-lg text-gray-900">{selectedAsset.creator?.email || '-'}</p>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-500 mb-1">
-                    Created On
-                  </label>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Created On</label>
                   <p className="text-lg text-gray-900">
                     {new Date(selectedAsset.created_at).toLocaleDateString('en-US', {
                       year: 'numeric',
@@ -293,7 +333,6 @@ export default function AssetsTab({ onUpdate }) {
               </div>
             </div>
 
-            {/* Modal Footer */}
             <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex gap-3">
               <button
                 onClick={() => setShowModal(false)}
