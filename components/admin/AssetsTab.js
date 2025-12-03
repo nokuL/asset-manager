@@ -8,6 +8,8 @@ export default function AssetsTab({ onUpdate }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [selectedAsset, setSelectedAsset] = useState(null)
+  const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     loadAssets()
@@ -102,6 +104,9 @@ export default function AssetsTab({ onUpdate }) {
                 Asset Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Image
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -123,10 +128,31 @@ export default function AssetsTab({ onUpdate }) {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {assets.map((asset) => (
-              <tr key={asset.id}>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              <tr
+                key={asset.id}
+                onClick={() => {
+                  setSelectedAsset(asset)
+                  setShowModal(true)
+                }}
+                className="hover:bg-gray-50 cursor-pointer transition-colors"
+              >                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {asset.asset_name}
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+  {asset.image_url ? (
+    <img 
+      src={asset.image_url} 
+      alt={asset.asset_name}
+      className="w-16 h-16 object-contain bg-gray-50 rounded-lg p-1"
+    />
+  ) : (
+    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    </div>
+  )}
+</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {asset.category?.name || '-'}
                 </td>
@@ -144,7 +170,10 @@ export default function AssetsTab({ onUpdate }) {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <button
-                    onClick={() => handleDelete(asset.id)}
+                    onClick={(e) => {
+                      e.stopPropagation() // Prevent row click
+                      handleDelete(asset.id)
+                    }}
                     className="text-red-600 hover:text-red-800 font-medium"
                   >
                     Delete
@@ -159,6 +188,133 @@ export default function AssetsTab({ onUpdate }) {
       {assets.length === 0 && (
         <div className="text-center py-8 text-gray-500">
           No assets found yet.
+        </div>
+      )}
+      {/* Asset Detail Modal */}
+      {showModal && selectedAsset && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+              <h3 className="text-xl font-bold text-gray-900">Asset Details</h3>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              {/* Asset Image */}
+              {selectedAsset.image_url && (
+                <div className="mb-6 bg-gray-50 rounded-lg p-4">
+                  <img
+                    src={selectedAsset.image_url}
+                    alt={selectedAsset.asset_name}
+                    className="w-full h-auto max-h-96 object-contain rounded-lg"
+                  />
+                </div>
+              )}
+
+              {/* Asset Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Asset Name
+                  </label>
+                  <p className="text-lg font-semibold text-gray-900">
+                    {selectedAsset.asset_name}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Category
+                  </label>
+                  <p className="text-lg text-gray-900">
+                    {selectedAsset.category?.name || '-'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Department
+                  </label>
+                  <p className="text-lg text-gray-900">
+                    {selectedAsset.department?.name || '-'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Cost
+                  </label>
+                  <p className="text-lg font-semibold text-accent-500">
+                    ${parseFloat(selectedAsset.cost).toFixed(2)}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Date Purchased
+                  </label>
+                  <p className="text-lg text-gray-900">
+                    {new Date(selectedAsset.date_purchased).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Created By
+                  </label>
+                  <p className="text-lg text-gray-900">
+                    {selectedAsset.creator?.email || '-'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Created On
+                  </label>
+                  <p className="text-lg text-gray-900">
+                    {new Date(selectedAsset.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex gap-3">
+              <button
+                onClick={() => setShowModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                Close
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (confirm(`Are you sure you want to delete "${selectedAsset.asset_name}"?`)) {
+                    handleDelete(selectedAsset.id)
+                    setShowModal(false)
+                  }
+                }}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete Asset
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

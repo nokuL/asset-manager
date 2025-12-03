@@ -72,7 +72,6 @@ export default function CategoriesTab({ onUpdate }) {
     }
   
     try {
-      // First check if category has any assets
       const { data: assets, error: checkError } = await supabase
         .from('assets')
         .select('id')
@@ -89,7 +88,6 @@ export default function CategoriesTab({ onUpdate }) {
         return
       }
   
-      // If no assets, proceed with deletion
       const { error: deleteError } = await supabase
         .from('asset_categories')
         .delete()
@@ -180,7 +178,6 @@ export default function CategoriesTab({ onUpdate }) {
         </div>
       )}
 
-      {/* Categories Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map((category) => (
           <div key={category.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
