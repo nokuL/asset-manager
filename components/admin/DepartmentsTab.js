@@ -66,22 +66,48 @@ export default function DepartmentsTab({ onUpdate }) {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this department?')) {
+  const handleDelete = async (id, name) => {
+    if (!confirm(`Are you sure you want to delete the "${name}" department?`)) {
       return
     }
-
-    const { error } = await supabase
-      .from('departments')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      setError(error.message)
-    } else {
-      setSuccess('Department deleted successfully!')
-      loadDepartments()
-      onUpdate()
+  
+    try {
+      // First check if department has any assets
+      const { data: assets, error: checkError } = await supabase
+        .from('assets')
+        .select('id')
+        .eq('department_id', id)
+        .limit(1)
+  
+      if (checkError) {
+        setError('Error checking department usage')
+        return
+      }
+  
+      if (assets && assets.length > 0) {
+        setError(`Cannot delete "${name}" department. It has assets assigned to it. Please reassign or delete those assets first.`)
+        return
+      }
+  
+      // If no assets, proceed with deletion
+      const { error: deleteError } = await supabase
+        .from('departments')
+        .delete()
+        .eq('id', id)
+  
+      if (deleteError) {
+        if (deleteError.code === '23503') {
+          setError(`Cannot delete "${name}". It is being used by existing assets.`)
+        } else {
+          setError(deleteError.message)
+        }
+      } else {
+        setSuccess(`Department "${name}" deleted successfully!`)
+        loadDepartments()
+        onUpdate()
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
     }
   }
 
@@ -161,11 +187,11 @@ export default function DepartmentsTab({ onUpdate }) {
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-lg font-semibold text-gray-900">{dept.name}</h3>
               <button
-                onClick={() => handleDelete(dept.id)}
-                className="text-red-600 hover:text-red-800 text-sm"
-              >
-                Delete
-              </button>
+  onClick={() => handleDelete(dept.id, dept.name)}
+  className="text-red-600 hover:text-red-800 text-sm"
+>
+  Delete
+</button>
             </div>
             {dept.description && (
               <p className="text-sm text-gray-600 mb-2">{dept.description}</p>

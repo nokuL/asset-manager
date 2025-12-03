@@ -66,22 +66,48 @@ export default function CategoriesTab({ onUpdate }) {
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this category?')) {
+  const handleDelete = async (id, name) => {
+    if (!confirm(`Are you sure you want to delete the "${name}" category?`)) {
       return
     }
-
-    const { error } = await supabase
-      .from('asset_categories')
-      .delete()
-      .eq('id', id)
-
-    if (error) {
-      setError(error.message)
-    } else {
-      setSuccess('Category deleted successfully!')
-      loadCategories()
-      onUpdate()
+  
+    try {
+      // First check if category has any assets
+      const { data: assets, error: checkError } = await supabase
+        .from('assets')
+        .select('id')
+        .eq('category_id', id)
+        .limit(1)
+  
+      if (checkError) {
+        setError('Error checking category usage')
+        return
+      }
+  
+      if (assets && assets.length > 0) {
+        setError(`Cannot delete "${name}" category. It has assets assigned to it. Please reassign or delete those assets first.`)
+        return
+      }
+  
+      // If no assets, proceed with deletion
+      const { error: deleteError } = await supabase
+        .from('asset_categories')
+        .delete()
+        .eq('id', id)
+  
+      if (deleteError) {
+        if (deleteError.code === '23503') {
+          setError(`Cannot delete "${name}". It is being used by existing assets.`)
+        } else {
+          setError(deleteError.message)
+        }
+      } else {
+        setSuccess(`Category "${name}" deleted successfully!`)
+        loadCategories()
+        onUpdate()
+      }
+    } catch (err) {
+      setError('An unexpected error occurred')
     }
   }
 
@@ -161,11 +187,11 @@ export default function CategoriesTab({ onUpdate }) {
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-lg font-semibold text-gray-900">{category.name}</h3>
               <button
-                onClick={() => handleDelete(category.id)}
-                className="text-red-600 hover:text-red-800 text-sm"
-              >
-                Delete
-              </button>
+  onClick={() => handleDelete(category.id, category.name)}
+  className="text-red-600 hover:text-red-800 text-sm"
+>
+  Delete
+</button>
             </div>
             {category.description && (
               <p className="text-sm text-gray-600 mb-2">{category.description}</p>

@@ -18,9 +18,12 @@ export default function UserDashboard() {
     department_id: '',
     date_purchased: '',
     cost: '',
+    image: null,
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [selectedAsset, setSelectedAsset] = useState(null)
+const [showModal, setShowModal] = useState(false)
 
   useEffect(() => {
     checkAuth()
@@ -30,7 +33,7 @@ export default function UserDashboard() {
 
   const checkAuth = async () => {
     const { data: { user } } = await supabase.auth.getUser()
-    
+
     if (!user) {
       router.push('/login')
       return
@@ -111,9 +114,36 @@ export default function UserDashboard() {
     e.preventDefault()
     setError('')
     setSuccess('')
+    setLoading(true)
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
+
+      let imageUrl = null
+
+      // Upload image if one was selected
+      if (formData.image) {
+        const fileExt = formData.image.name.split('.').pop()
+        const fileName = `${user.id}-${Date.now()}.${fileExt}`
+        const filePath = `${fileName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('asset-images')
+          .upload(filePath, formData.image)
+
+        if (uploadError) {
+          setError('Failed to upload image: ' + uploadError.message)
+          setLoading(false)
+          return
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('asset-images')
+          .getPublicUrl(filePath)
+
+        imageUrl = urlData.publicUrl
+      }
 
       const { error: insertError } = await supabase
         .from('assets')
@@ -124,12 +154,14 @@ export default function UserDashboard() {
             department_id: formData.department_id,
             date_purchased: formData.date_purchased,
             cost: parseFloat(formData.cost),
+            image_url: imageUrl,
             created_by: user.id,
           },
         ])
 
       if (insertError) {
         setError(insertError.message)
+        setLoading(false)
         return
       }
 
@@ -140,11 +172,14 @@ export default function UserDashboard() {
         department_id: '',
         date_purchased: '',
         cost: '',
+        image: null,
       })
       setShowForm(false)
       loadAssets(user.id)
     } catch (err) {
       setError('Failed to create asset')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -293,6 +328,22 @@ export default function UserDashboard() {
                   placeholder="0.00"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Asset Image (Optional)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFormData({ ...formData, image: e.target.files[0] })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100"
+                />
+                {formData.image && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    Selected: {formData.image.name}
+                  </p>
+                )}
+              </div>
 
               <button
                 type="submit"
@@ -323,13 +374,23 @@ export default function UserDashboard() {
                     Cost
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Image
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date Purchased
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {assets.map((asset) => (
-                  <tr key={asset.id}>
+                  <tr 
+                  key={asset.id}
+                  onClick={() => {
+                    setSelectedAsset(asset)
+                    setShowModal(true)
+                  }}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {asset.asset_name}
                     </td>
@@ -341,6 +402,17 @@ export default function UserDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ${parseFloat(asset.cost).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {asset.image_url ? (
+                        <img
+                          src={asset.image_url}
+                          alt={asset.asset_name}
+                          className="w-16 h-16 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <span className="text-gray-400">No image</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(asset.date_purchased).toLocaleDateString()}
@@ -358,6 +430,111 @@ export default function UserDashboard() {
           )}
         </div>
       </main>
+      {/* Asset Detail Modal */}
+{showModal && selectedAsset && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      {/* Modal Header */}
+      <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+        <h3 className="text-xl font-bold text-gray-900">Asset Details</h3>
+        <button
+          onClick={() => setShowModal(false)}
+          className="text-gray-400 hover:text-gray-600 text-2xl"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Modal Body */}
+      <div className="p-6">
+        {/* Asset Image */}
+        {selectedAsset.image_url && (
+          <div className="mb-6">
+            <img
+              src={selectedAsset.image_url}
+              alt={selectedAsset.asset_name}
+              className="w-full h-64 object-cover rounded-lg shadow-lg"
+            />
+          </div>
+        )}
+
+        {/* Asset Information */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">
+              Asset Name
+            </label>
+            <p className="text-lg font-semibold text-gray-900">
+              {selectedAsset.asset_name}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">
+              Category
+            </label>
+            <p className="text-lg text-gray-900">
+              {selectedAsset.category?.name || '-'}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">
+              Department
+            </label>
+            <p className="text-lg text-gray-900">
+              {selectedAsset.department?.name || '-'}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">
+              Cost
+            </label>
+            <p className="text-lg font-semibold text-accent-500">
+              ${parseFloat(selectedAsset.cost).toFixed(2)}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">
+              Date Purchased
+            </label>
+            <p className="text-lg text-gray-900">
+              {new Date(selectedAsset.date_purchased).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-500 mb-1">
+              Created On
+            </label>
+            <p className="text-lg text-gray-900">
+              {new Date(selectedAsset.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+        <button
+          onClick={() => setShowModal(false)}
+          className="w-full px-4 py-2 bg-primary-800 text-white rounded-lg hover:bg-primary-900 transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   )
 }
