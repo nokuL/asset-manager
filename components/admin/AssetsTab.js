@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
+import AssetTracking from '@/components/AssetTrackingModal'
 
 export default function AssetsTab({ onUpdate }) {
   const [assets, setAssets] = useState([])
@@ -12,6 +13,10 @@ export default function AssetsTab({ onUpdate }) {
   const [showModal, setShowModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage] = useState(5)
+
   useEffect(() => {
     loadAssets()
   }, [])
@@ -20,6 +25,7 @@ export default function AssetsTab({ onUpdate }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       loadAssets(searchTerm)
+      setCurrentPage(1) 
     }, 500)
 
     return () => clearTimeout(timer)
@@ -33,7 +39,6 @@ export default function AssetsTab({ onUpdate }) {
         .select('*')
         .order('created_at', { ascending: false })
 
-      // Add search filter if search term exists
       if (search) {
         query = query.ilike('asset_name', `%${search}%`)
       }
@@ -91,6 +96,12 @@ export default function AssetsTab({ onUpdate }) {
     }
   }
 
+  // Pagination calculations
+  const totalPages = Math.ceil(assets.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const currentAssets = assets.slice(startIndex, endIndex)
+
   if (loading && assets.length === 0) {
     return <div className="text-center py-8">Loading assets...</div>
   }
@@ -100,7 +111,7 @@ export default function AssetsTab({ onUpdate }) {
       <div className="mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
           <h2 className="text-xl font-semibold">All Assets</h2>
-          
+
           {/* Search Bar */}
           <div className="relative w-full sm:w-96">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -110,7 +121,7 @@ export default function AssetsTab({ onUpdate }) {
             </div>
             <input
               type="text"
-              placeholder="Search assets by name ..."
+              placeholder="Search assets by name..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500 focus:border-accent-500 text-sm"
@@ -127,8 +138,7 @@ export default function AssetsTab({ onUpdate }) {
             )}
           </div>
         </div>
-        
-        {/* Search results count */}
+
         {searchTerm && (
           <p className="text-sm text-gray-600">
             Found {assets.length} asset{assets.length !== 1 ? 's' : ''}
@@ -154,10 +164,16 @@ export default function AssetsTab({ onUpdate }) {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Asset ID
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Asset Name
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Image
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Category
@@ -180,7 +196,7 @@ export default function AssetsTab({ onUpdate }) {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {assets.map((asset) => (
+            {currentAssets.map((asset) => (
               <tr
                 key={asset.id}
                 onClick={() => {
@@ -189,13 +205,16 @@ export default function AssetsTab({ onUpdate }) {
                 }}
                 className="hover:bg-gray-50 cursor-pointer transition-colors"
               >
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-semibold text-primary-800">
+                  {asset.asset_id}
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                   {asset.asset_name}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   {asset.image_url ? (
-                    <img 
-                      src={asset.image_url} 
+                    <img
+                      src={asset.image_url}
                       alt={asset.asset_name}
                       className="w-16 h-16 object-contain bg-gray-50 rounded-lg p-1"
                     />
@@ -206,6 +225,15 @@ export default function AssetsTab({ onUpdate }) {
                       </svg>
                     </div>
                   )}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${asset.status === 'Available' ? 'bg-green-100 text-green-800' :
+                      asset.status === 'In Use' ? 'bg-blue-100 text-blue-800' :
+                        asset.status === 'Under Maintenance' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                    }`}>
+                    {asset.status}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {asset.category?.name || '-'}
@@ -223,21 +251,107 @@ export default function AssetsTab({ onUpdate }) {
                   {asset.creator?.email || '-'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDelete(asset.id)
-                    }}
-                    className="text-red-600 hover:text-red-800 font-medium"
-                  >
-                    Delete
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setSelectedAsset(asset)
+                        setShowModal(true)
+                      }}
+                      className="text-primary-600 hover:text-primary-800 transition-colors"
+                      title="View details"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleDelete(asset.id)
+                      }}
+                      className="text-red-600 hover:text-red-800 transition-colors"
+                      title="Delete asset"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {/* Pagination */}
+      {assets.length > itemsPerPage && (
+        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-4">
+          <div className="flex-1 flex justify-between sm:hidden">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                <span className="font-medium">{Math.min(endIndex, assets.length)}</span> of{' '}
+                <span className="font-medium">{assets.length}</span> results
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+
+                {[...Array(totalPages)].map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentPage(idx + 1)}
+                    className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === idx + 1
+                        ? 'z-10 bg-accent-50 border-accent-500 text-accent-600'
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      }`}
+                  >
+                    {idx + 1}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
 
       {assets.length === 0 && (
         <div className="text-center py-8 text-gray-500">
@@ -260,8 +374,8 @@ export default function AssetsTab({ onUpdate }) {
       {/* Asset Detail Modal */}
       {showModal && selectedAsset && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center z-10">
               <h3 className="text-xl font-bold text-gray-900">Asset Details</h3>
               <button
                 onClick={() => setShowModal(false)}
@@ -290,9 +404,28 @@ export default function AssetsTab({ onUpdate }) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Asset ID
+                  </label>
+                  <p className="text-xl font-mono font-bold text-primary-800">
+                    {selectedAsset.asset_id}
+                  </p>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">Asset Name</label>
                   <p className="text-lg font-semibold text-gray-900">{selectedAsset.asset_name}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Status</label>
+                  <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${selectedAsset.status === 'Available' ? 'bg-green-100 text-green-800' :
+                      selectedAsset.status === 'In Use' ? 'bg-blue-100 text-blue-800' :
+                        selectedAsset.status === 'Under Maintenance' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                    }`}>
+                    {selectedAsset.status}
+                  </span>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">Category</label>
@@ -305,6 +438,10 @@ export default function AssetsTab({ onUpdate }) {
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">Cost</label>
                   <p className="text-lg font-semibold text-accent-500">${parseFloat(selectedAsset.cost).toFixed(2)}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Current Location</label>
+                  <p className="text-lg text-gray-900">{selectedAsset.current_location || 'Not specified'}</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">Date Purchased</label>
@@ -331,9 +468,36 @@ export default function AssetsTab({ onUpdate }) {
                   </p>
                 </div>
               </div>
+
+              {/* Asset Tracking Section */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <AssetTracking
+                  assetId={selectedAsset.id}
+                  currentStatus={selectedAsset.status}
+                  currentLocation={selectedAsset.current_location}
+                  onUpdate={() => {
+                    loadAssets(searchTerm)
+                    // Refresh selected asset
+                    const refreshAsset = async () => {
+                      const { data } = await supabase
+                        .from('assets')
+                        .select(`
+                          *,
+                          category:asset_categories(name),
+                          department:departments(name),
+                          creator:profiles(email, full_name)
+                        `)
+                        .eq('id', selectedAsset.id)
+                        .single()
+                      if (data) setSelectedAsset(data)
+                    }
+                    refreshAsset()
+                  }}
+                />
+              </div>
             </div>
 
-            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex gap-3">
+            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex gap-3 sticky bottom-0">
               <button
                 onClick={() => setShowModal(false)}
                 className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"

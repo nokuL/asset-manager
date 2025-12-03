@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Navbar from '@/components/Navbar'
+import AssetTracker from '@/components/AssetTracker'
 
 export default function UserDashboard() {
   const router = useRouter()
@@ -20,6 +21,9 @@ export default function UserDashboard() {
     date_purchased: '',
     cost: '',
     image: null,
+    status: 'Available',
+    current_location: '',
+    assigned_to: '',
   })
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -70,26 +74,26 @@ export default function UserDashboard() {
         .select('*')
         .eq('created_by', userId)
         .order('created_at', { ascending: false })
-  
+
       // Add search filter if search term exists
       if (search) {
         query = query.ilike('asset_name', `%${search}%`)
       }
-  
+
       const { data, error } = await query
-  
+
       if (error) {
         console.error('Error loading assets:', error)
         return
       }
-  
+
       const assetsWithDetails = await Promise.all(
         (data || []).map(async (asset) => {
           const [category, department] = await Promise.all([
             supabase.from('asset_categories').select('name').eq('id', asset.category_id).single(),
             supabase.from('departments').select('name').eq('id', asset.department_id).single(),
           ])
-  
+
           return {
             ...asset,
             category: category.data,
@@ -97,7 +101,7 @@ export default function UserDashboard() {
           }
         })
       )
-  
+
       setAssets(assetsWithDetails)
     } catch (err) {
       console.error('Error loading assets:', err)
@@ -173,6 +177,9 @@ export default function UserDashboard() {
             date_purchased: formData.date_purchased,
             cost: parseFloat(formData.cost),
             image_url: imageUrl,
+            status: formData.status,
+            current_location: formData.current_location || null,
+            assigned_to: formData.assigned_to || null,
             created_by: user.id,
           },
         ])
@@ -190,6 +197,9 @@ export default function UserDashboard() {
         date_purchased: '',
         cost: '',
         image: null,
+        status: 'Available',
+        current_location: '',
+        assigned_to: '',
       })
       setShowForm(false)
       loadAssets(user.id, searchTerm)
@@ -211,6 +221,9 @@ export default function UserDashboard() {
       <Navbar user={user} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="mb-8">
+    <AssetTracker />
+  </div>
         {/* Stats Card */}
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
           <h3 className="text-gray-500 text-sm font-medium">My Total Assets</h3>
@@ -221,7 +234,7 @@ export default function UserDashboard() {
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
             <h2 className="text-xl font-semibold">My Assets</h2>
-            
+
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto">
               {/* Search Bar */}
               <div className="relative w-full sm:w-80">
@@ -248,7 +261,7 @@ export default function UserDashboard() {
                   </button>
                 )}
               </div>
-              
+
               {/* Create Asset Button */}
               <button
                 onClick={() => setShowForm(!showForm)}
@@ -258,7 +271,7 @@ export default function UserDashboard() {
               </button>
             </div>
           </div>
-          
+
           {/* Search results count */}
           {searchTerm && (
             <p className="text-sm text-gray-600">
@@ -380,6 +393,35 @@ export default function UserDashboard() {
                   </p>
                 )}
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status *
+                </label>
+                <select
+                  required
+                  value={formData.status}
+                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
+                >
+                  <option value="Available">Available</option>
+                  <option value="In Use">In Use</option>
+                  <option value="Under Maintenance">Under Maintenance</option>
+                  <option value="Retired">Retired</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Current Location (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={formData.current_location}
+                  onChange={(e) => setFormData({ ...formData, current_location: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-500"
+                  placeholder="e.g., Building A, Floor 3, Room 301"
+                />
+              </div>
 
               <button
                 type="submit"
@@ -398,6 +440,9 @@ export default function UserDashboard() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Asset ID
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Asset Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -411,6 +456,9 @@ export default function UserDashboard() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Cost
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date Purchased
@@ -427,6 +475,9 @@ export default function UserDashboard() {
                     }}
                     className="hover:bg-gray-50 cursor-pointer transition-colors"
                   >
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono font-semibold text-primary-800">
+                      {asset.asset_id}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {asset.asset_name}
                     </td>
@@ -453,6 +504,15 @@ export default function UserDashboard() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ${parseFloat(asset.cost).toFixed(2)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${asset.status === 'Available' ? 'bg-green-100 text-green-800' :
+                          asset.status === 'In Use' ? 'bg-blue-100 text-blue-800' :
+                            asset.status === 'Under Maintenance' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                        }`}>
+                        {asset.status}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(asset.date_purchased).toLocaleDateString()}
@@ -516,6 +576,14 @@ export default function UserDashboard() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Asset ID
+                  </label>
+                  <p className="text-xl font-mono font-bold text-primary-800">
+                    {selectedAsset.asset_id}
+                  </p>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">Asset Name</label>
                   <p className="text-lg font-semibold text-gray-900">{selectedAsset.asset_name}</p>
@@ -552,6 +620,29 @@ export default function UserDashboard() {
                     })}
                   </p>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Status
+                  </label>
+                  <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${selectedAsset.status === 'Available' ? 'bg-green-100 text-green-800' :
+                      selectedAsset.status === 'In Use' ? 'bg-blue-100 text-blue-800' :
+                        selectedAsset.status === 'Under Maintenance' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                    }`}>
+                    {selectedAsset.status}
+                  </span>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">
+                    Current Location
+                  </label>
+                  <p className="text-lg text-gray-900">
+                    {selectedAsset.current_location || 'Not specified'}
+                  </p>
+                </div>
+
+
               </div>
             </div>
 

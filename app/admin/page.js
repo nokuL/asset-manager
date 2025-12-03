@@ -8,6 +8,8 @@ import DepartmentsTab from '@/components/admin/DepartmentsTab'
 import CategoriesTab from '@/components/admin/CategoriesTab'
 import AssetsTab from '@/components/admin/AssetsTab'
 import Navbar from '@/components/Navbar'
+import OverviewTab from '@/components/admin/OverviewTab'
+import AssetTracker from '@/components/AssetTracker'
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -209,15 +211,11 @@ export default function AdminDashboard() {
   </div>
   <div className="p-6">
   {activeTab === 'overview' && (
-    <div>
-      <h2 className="text-xl font-semibold mb-4">Dashboard Overview</h2>
-      <p className="text-gray-600">
-        Welcome to the Asset Manager Admin Dashboard. Use the tabs above to manage users, 
-        departments, categories, and assets.
-      </p>
-    </div>
-  )}
-
+  <div className="space-y-6">
+    <AssetTracker />
+    <OverviewTab />
+  </div>
+)}
   {activeTab === 'users' && <UsersTab onUpdate={loadStats} />}
   {activeTab === 'departments' && <DepartmentsTab onUpdate={loadStats} />}
   {activeTab === 'categories' && <CategoriesTab onUpdate={loadStats} />}
