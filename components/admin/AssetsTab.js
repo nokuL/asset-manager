@@ -16,7 +16,6 @@ export default function AssetsTab({ onUpdate }) {
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(5)
-  const supabase = createClientComponentClient()
 
 
   useEffect(() => {
