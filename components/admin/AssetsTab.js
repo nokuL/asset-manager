@@ -107,12 +107,23 @@ export default function AssetsTab({ onUpdate }) {
         throw new Error('You must be logged in to register warranties')
       }
   
-      // Register warranty using service account + user context
-      await registerWarrantyWithContext(asset, {
-        id: currentUser.id,
-        email: currentUser.email,
-        full_name: currentUser.user_metadata?.full_name || currentUser.email
+      // ✅ ADD THIS: Call Next.js API route (which calls Python API)
+      const response = await fetch('/api/register-warranty', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          asset_id: asset.asset_id,
+          asset_name: asset.asset_name,
+          serial_number: asset.id.toString()
+        })
       })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to register warranty')
+      }
       
       const { error: updateError } = await supabase
         .from('assets')
