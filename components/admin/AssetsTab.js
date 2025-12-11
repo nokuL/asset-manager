@@ -13,7 +13,6 @@ export default function AssetsTab({ onUpdate }) {
   const [showModal, setShowModal] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(5)
 
@@ -21,7 +20,6 @@ export default function AssetsTab({ onUpdate }) {
     loadAssets()
   }, [])
 
-  // Debounced search effect
   useEffect(() => {
     const timer = setTimeout(() => {
       loadAssets(searchTerm)
@@ -96,7 +94,69 @@ export default function AssetsTab({ onUpdate }) {
     }
   }
 
-  // Pagination calculations
+  const handleRegisterWarranty = async (asset) => {
+    try {
+      setError('')
+      
+      // Call our Next.js API route (server-side) instead of Python API directly
+      const response = await fetch('/api/register-warranty', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          asset_id: asset.asset_id,
+          asset_name: asset.asset_name,
+          serial_number: asset.id.toString()
+        })
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to register warranty')
+      }
+      
+      // Update Supabase
+      const { error: updateError } = await supabase
+        .from('assets')
+        .update({ warranty_status: 'Warranty Registered' })
+        .eq('id', asset.id)
+      
+      if (updateError) {
+        throw updateError
+      }
+      
+      setSuccess('Warranty registered successfully!')
+      loadAssets(searchTerm)
+      
+      // Refresh selected asset
+      const { data } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('id', asset.id)
+        .single()
+      
+      if (data) {
+        const [category, department, creator] = await Promise.all([
+          supabase.from('asset_categories').select('name').eq('id', data.category_id).single(),
+          supabase.from('departments').select('name').eq('id', data.department_id).single(),
+          supabase.from('profiles').select('email, full_name').eq('id', data.created_by).single(),
+        ])
+        
+        setSelectedAsset({
+          ...data,
+          category: category.data,
+          department: department.data,
+          creator: creator.data,
+        })
+      }
+      
+    } catch (err) {
+      console.error('Warranty registration error:', err)
+      setError(err.message || 'Failed to register warranty')
+    }
+  }
+
   const totalPages = Math.ceil(assets.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
@@ -427,6 +487,19 @@ export default function AssetsTab({ onUpdate }) {
                     {selectedAsset.status}
                   </span>
                 </div>
+                {/* NEW: Warranty Status Display */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Warranty Status</label>
+                  {selectedAsset.warranty_status ? (
+                    <span className="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
+                      ✓ {selectedAsset.warranty_status}
+                    </span>
+                  ) : (
+                    <span className="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-600">
+                      Not Registered
+                    </span>
+                  )}
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-500 mb-1">Category</label>
                   <p className="text-lg text-gray-900">{selectedAsset.category?.name || '-'}</p>
@@ -497,6 +570,7 @@ export default function AssetsTab({ onUpdate }) {
               </div>
             </div>
 
+            {/* UPDATED: Footer with Register Warranty Button */}
             <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex gap-3 sticky bottom-0">
               <button
                 onClick={() => setShowModal(false)}
@@ -504,6 +578,16 @@ export default function AssetsTab({ onUpdate }) {
               >
                 Close
               </button>
+              
+              {!selectedAsset.warranty_status && (
+                <button
+                  onClick={() => handleRegisterWarranty(selectedAsset)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Register Warranty
+                </button>
+              )}
+              
               <button
                 onClick={(e) => {
                   e.stopPropagation()
