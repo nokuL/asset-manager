@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import AssetTracking from '@/components/AssetTrackingModal'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 
 export default function AssetsTab({ onUpdate }) {
