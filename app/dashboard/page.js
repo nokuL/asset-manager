@@ -133,6 +133,66 @@ export default function UserDashboard() {
       setCategories(data || [])
     }
   }
+  const handleRegisterWarranty = async (asset) => {
+    try {
+      setError('')
+      
+      // Call our Next.js API route (server-side)
+      const response = await fetch('/api/register-warranty', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          asset_id: asset.asset_id,
+          asset_name: asset.asset_name,
+          serial_number: asset.id.toString()
+        })
+      })
+      
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to register warranty')
+      }
+      
+      // Update Supabase
+      const { error: updateError } = await supabase
+        .from('assets')
+        .update({ warranty_status: 'Warranty Registered' })
+        .eq('id', asset.id)
+      
+      if (updateError) {
+        throw updateError
+      }
+      
+      setSuccess('Warranty registered successfully!')
+      loadAssets(user.id, searchTerm)
+      
+      // Refresh selected asset
+      const { data } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('id', asset.id)
+        .single()
+      
+      if (data) {
+        const [category, department] = await Promise.all([
+          supabase.from('asset_categories').select('name').eq('id', data.category_id).single(),
+          supabase.from('departments').select('name').eq('id', data.department_id).single(),
+        ])
+        
+        setSelectedAsset({
+          ...data,
+          category: category.data,
+          department: department.data,
+        })
+      }
+      
+    } catch (err) {
+      console.error('Warranty registration error:', err)
+      setError(err.message || 'Failed to register warranty')
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -641,18 +701,39 @@ export default function UserDashboard() {
                     {selectedAsset.current_location || 'Not specified'}
                   </p>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500 mb-1">Warranty Status</label>
+                  {selectedAsset.warranty_status ? (
+                    <span className="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-green-100 text-green-800">
+                      ✓ {selectedAsset.warranty_status}
+                    </span>
+                  ) : (
+                    <span className="inline-flex px-3 py-1 text-sm font-semibold rounded-full bg-gray-100 text-gray-600">
+                      Not Registered
+                    </span>
+                  )}
+                </div>
 
 
               </div>
             </div>
 
-            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex gap-3">
               <button
                 onClick={() => setShowModal(false)}
-                className="w-full px-4 py-2 bg-primary-800 text-white rounded-lg hover:bg-primary-900 transition-colors"
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
                 Close
               </button>
+              
+              {!selectedAsset.warranty_status && (
+                <button
+                  onClick={() => handleRegisterWarranty(selectedAsset)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Register Warranty
+                </button>
+              )}
             </div>
           </div>
         </div>
