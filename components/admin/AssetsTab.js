@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import AssetTracking from '@/components/AssetTrackingModal'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+
 
 export default function AssetsTab({ onUpdate }) {
   const [assets, setAssets] = useState([])
@@ -15,6 +17,8 @@ export default function AssetsTab({ onUpdate }) {
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage] = useState(5)
+  const supabase = createClientComponentClient()
+
 
   useEffect(() => {
     loadAssets()
@@ -98,25 +102,20 @@ export default function AssetsTab({ onUpdate }) {
     try {
       setError('')
       
-      // Call our Next.js API route (server-side) instead of Python API directly
-      const response = await fetch('/api/register-warranty', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          asset_id: asset.asset_id,
-          asset_name: asset.asset_name,
-          serial_number: asset.id.toString()
-        })
+      // Get current user info
+      const { data: { user: currentUser } } = await supabase.auth.getUser()
+      
+      if (!currentUser) {
+        throw new Error('You must be logged in to register warranties')
+      }
+  
+      // Register warranty using service account + user context
+      await registerWarrantyWithContext(asset, {
+        id: currentUser.id,
+        email: currentUser.email,
+        full_name: currentUser.user_metadata?.full_name || currentUser.email
       })
       
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to register warranty')
-      }
-      
-      // Update Supabase
       const { error: updateError } = await supabase
         .from('assets')
         .update({ warranty_status: 'Warranty Registered' })
@@ -129,25 +128,25 @@ export default function AssetsTab({ onUpdate }) {
       setSuccess('Warranty registered successfully!')
       loadAssets(searchTerm)
       
-      // Refresh selected asset
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('assets')
-        .select('*')
+        .select(`
+          *,
+          category:asset_categories(name),
+          department:departments(name),
+          creator:profiles(email, full_name)
+        `)
         .eq('id', asset.id)
         .single()
       
-      if (data) {
-        const [category, department, creator] = await Promise.all([
-          supabase.from('asset_categories').select('name').eq('id', data.category_id).single(),
-          supabase.from('departments').select('name').eq('id', data.department_id).single(),
-          supabase.from('profiles').select('email, full_name').eq('id', data.created_by).single(),
-        ])
-        
+      if (error) {
+        console.error('Failed to reload asset:', error)
+      } else if (data) {
         setSelectedAsset({
           ...data,
-          category: category.data,
-          department: department.data,
-          creator: creator.data,
+          category: data.category || { name: 'N/A' },
+          department: data.department || { name: 'N/A' },
+          creator: data.creator || { email: 'N/A', full_name: 'N/A' }
         })
       }
       
@@ -156,7 +155,6 @@ export default function AssetsTab({ onUpdate }) {
       setError(err.message || 'Failed to register warranty')
     }
   }
-
   const totalPages = Math.ceil(assets.length / itemsPerPage)
   const startIndex = (currentPage - 1) * itemsPerPage
   const endIndex = startIndex + itemsPerPage
